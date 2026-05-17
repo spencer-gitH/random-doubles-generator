@@ -1,5 +1,6 @@
 import EventCard from "@/components/EventCard";
 import PasteUrlFallback from "@/components/PasteUrlFallback";
+import Wordmark from "@/components/Wordmark";
 import { fetchTodaysEvents, EventsScrapeError } from "@/lib/searchEvents";
 
 export const dynamic = "force-dynamic";
@@ -22,46 +23,98 @@ export default async function HomePage() {
   }
 
   const today = new Date();
-  const todayLabel = today.toLocaleDateString(undefined, {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  });
+  const dd = String(today.getDate()).padStart(2, "0");
+  const mm = String(today.getMonth() + 1).padStart(2, "0");
+  const yy = String(today.getFullYear()).slice(-2);
+  const wkday = today
+    .toLocaleDateString("en-US", { weekday: "short" })
+    .toUpperCase();
+  const dateLabel = `${dd}.${mm}.${yy}`;
 
   const hasEvents = events && events.length > 0;
+  const eventCount = hasEvents ? events!.length : 0;
 
   return (
-    <main className="flex-1 flex flex-col px-4 py-6 max-w-md mx-auto w-full">
-      <header className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Random Doubles</h1>
-        <p className="text-sm text-gray-500 mt-1">Events today — {todayLabel}</p>
+    <main className="screen screen--home">
+      <header className="home-header">
+        <Wordmark diceSize={36} />
+        <div className="home-header__meta">
+          <div className="home-header__meta-row">
+            <span className="home-header__meta-label">DAY/</span>
+            <span>{wkday}</span>
+          </div>
+          <div className="home-header__meta-row">
+            <span className="home-header__meta-label">DATE/</span>
+            <span>{dateLabel}</span>
+          </div>
+        </div>
       </header>
 
+      <div className="home-hero">
+        <div className="home-hero__pre">[ ON THE DOCKET ▸ TODAY ]</div>
+        <h1 className="home-hero__title">
+          Pick a card.
+          <br />
+          <span className="home-hero__title-em">Roll the dice.</span>
+        </h1>
+        <p className="home-hero__sub">
+          UDisc events within a 100-mile radius. Tap one to load its roster.
+        </p>
+      </div>
+
+      <div className="home-events__count">
+        <div className="home-events__count-num">
+          {String(eventCount).padStart(2, "0")}
+        </div>
+        <div className="home-events__count-label">
+          <span>Events / Live</span>
+          <em>
+            {wkday} {dateLabel} · 100mi radius
+          </em>
+        </div>
+      </div>
+
       {hasEvents && (
-        <ul className="flex flex-col gap-2">
-          {events!.map((e) => (
+        <ul className="event-list">
+          {events!.map((e, i) => (
             <li key={e.slug}>
-              <EventCard event={e} />
+              <EventCard event={e} index={i + 1} />
             </li>
           ))}
         </ul>
       )}
 
       {!hasEvents && !errorMessage && (
-        <PasteUrlFallback
-          variant="primary"
-          message="No UDisc events today within 100 miles. Paste a URL instead:"
-        />
+        <section className="home-fallback">
+          <PasteUrlFallback
+            variant="primary"
+            message="No UDisc events today within 100 miles. Paste a URL instead."
+          />
+        </section>
       )}
 
       {errorMessage && (
-        <PasteUrlFallback
-          variant="primary"
-          message={`Couldn't load events from UDisc (${errorMessage}). Paste a URL instead:`}
-        />
+        <section className="home-fallback">
+          <PasteUrlFallback
+            variant="primary"
+            message={`Couldn't load events from UDisc (${errorMessage}). Paste a URL instead.`}
+          />
+        </section>
       )}
 
-      {hasEvents && <PasteUrlFallback variant="footer" />}
+      {hasEvents && (
+        <section className="home-fallback">
+          <PasteUrlFallback variant="footer" />
+        </section>
+      )}
+
+      <footer className="home-footer">
+        <div className="home-footer__rule" />
+        <div className="home-footer__text">
+          <span>v0.4 · CLUBHOUSE</span>
+          <span>UDISC ↔ LIVE</span>
+        </div>
+      </footer>
     </main>
   );
 }

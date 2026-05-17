@@ -8,6 +8,7 @@ import {
   TooFewPlayersError,
   TooManyPlayersError,
 } from "@/lib/randomize";
+import Eyebrow from "./Eyebrow";
 
 const STORAGE_KEY_PREFIX = "rdg-roster:";
 
@@ -43,18 +44,24 @@ export default function ResultBoard({ slug }: { slug: string }) {
 
   if (!hasLoaded) {
     return (
-      <main className="flex-1 flex items-center justify-center text-sm text-gray-500">
-        Loading...
+      <main className="screen state-center">
+        <Eyebrow rule hot>
+          [ DRAWING ]
+        </Eyebrow>
+        <p className="state-body">Shuffling field…</p>
       </main>
     );
   }
 
   if (error) {
     return (
-      <main className="flex-1 flex flex-col items-center justify-center px-6 py-12 text-center gap-3">
-        <p className="text-sm text-red-600">{error}</p>
-        <Link href={`/event/${slug}`} className="text-sm underline">
-          Back to roster
+      <main className="screen state-center">
+        <Eyebrow rule hot>
+          [ DRAW FAILED ]
+        </Eyebrow>
+        <p className="state-body">{error}</p>
+        <Link href={`/event/${slug}`} className="back-btn">
+          ← Roster
         </Link>
       </main>
     );
@@ -62,61 +69,87 @@ export default function ResultBoard({ slug }: { slug: string }) {
 
   if (!assignment) return null;
 
+  const totalPlayers = assignment.cards.reduce(
+    (acc, c) => acc + c.size,
+    0,
+  );
+
   return (
-    <main className="flex-1 flex flex-col px-4 py-4 max-w-md mx-auto w-full">
-      <div className="sticky top-0 z-10 bg-white -mx-4 px-4 py-3 border-b border-gray-200 flex items-center justify-between gap-2">
-        <Link href={`/event/${slug}`} className="text-xs text-gray-500 underline">
+    <main className="screen screen--results">
+      <header className="rs-header--sticky">
+        <Link href={`/event/${slug}`} className="back-btn">
           ← Roster
         </Link>
-        <button
-          type="button"
-          onClick={roll}
-          className="rounded-md bg-black px-3 py-1.5 text-white text-sm font-medium"
-        >
-          Re-randomize
+        <button type="button" onClick={roll} className="redraw-btn">
+          ⟲ Re-draw
         </button>
-      </div>
+      </header>
 
-      <div className="flex flex-col gap-4 mt-4">
-        {assignment.cards.map((card, i) => (
-          <section
-            key={`${card.hole}-${i}`}
-            className="rounded-lg border border-gray-200 p-4"
-          >
-            <header className="flex items-baseline justify-between mb-3">
-              <h2 className="text-lg font-semibold">
-                Hole {card.hole}
-              </h2>
-              <span className="text-xs text-gray-500">
-                {card.size} players
-              </span>
-            </header>
-            <ul className="flex flex-col gap-2">
-              {card.teams.map((team, ti) => (
-                <li key={team.id}>
-                  <div className="text-xs text-gray-500 uppercase tracking-wide">
-                    Team {String.fromCharCode(65 + ti)}
+      <div className="results-body">
+        <div className="results-hero">
+          <Eyebrow rule={false} hot>
+            [ THE DRAW · TODAY ]
+          </Eyebrow>
+          <h1 className="results-title">The Draw</h1>
+          <div className="results-meta">
+            <span>{String(totalPlayers).padStart(2, "0")} PLAYERS</span>
+            <span className="dot">/</span>
+            <span>
+              {String(assignment.cards.length).padStart(2, "0")} CARDS
+            </span>
+            <span className="dot">/</span>
+            <span>Shotgun start</span>
+          </div>
+        </div>
+
+        <ol className="cards">
+          {assignment.cards.map((card, ci) => (
+            <li key={`${card.hole}-${ci}`} className="card-row">
+              <header className="card-row__head">
+                <div className="card-row__hole">
+                  <span className="card-row__hole-pre">HOLE</span>
+                  <span className="card-row__hole-num">
+                    {String(card.hole).padStart(2, "0")}
+                  </span>
+                </div>
+                <div className="card-row__size">{card.size} PLR</div>
+              </header>
+              <div className="card-row__body">
+                {card.teams.map((team, ti) => (
+                  <div key={team.id} className="team">
+                    <div className="team__label">
+                      <span className="team__label-tag">
+                        TEAM {String.fromCharCode(65 + ti)}
+                      </span>
+                    </div>
+                    <div className="team__names">
+                      <span>{team.players[0].name}</span>
+                      <span className="team__amp">+</span>
+                      <span>{team.players[1].name}</span>
+                    </div>
                   </div>
-                  <div className="text-base">
-                    {team.players[0].name} <span className="text-gray-400">&</span>{" "}
-                    {team.players[1].name}
+                ))}
+                {card.cali && (
+                  <div className="cali">
+                    <div className="cali__label">
+                      <span className="team__label-tag cali__label-tag">
+                        CALI
+                      </span>
+                      <span className="cali__pip">+1 MULL / HOLE</span>
+                    </div>
+                    <div className="cali__name">{card.cali.name}</div>
                   </div>
-                </li>
-              ))}
-              {card.cali && (
-                <li>
-                  <div className="text-xs text-gray-500 uppercase tracking-wide">
-                    Cali
-                  </div>
-                  <div className="text-base">
-                    {card.cali.name}{" "}
-                    <span className="text-xs text-gray-400">(1 mulligan/hole)</span>
-                  </div>
-                </li>
-              )}
-            </ul>
-          </section>
-        ))}
+                )}
+              </div>
+            </li>
+          ))}
+        </ol>
+
+        <div className="results-footer">
+          <div className="footer-text">
+            GOOD LUCK · TEE OFF AT MARKED HOLES
+          </div>
+        </div>
       </div>
     </main>
   );

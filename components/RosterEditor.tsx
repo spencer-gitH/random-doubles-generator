@@ -49,53 +49,78 @@ export default function RosterEditor({
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <ul className="flex flex-col gap-1.5">
-        {players.map((p) => (
-          <li
-            key={p.id}
-            className="flex items-center justify-between rounded-md border border-gray-200 px-3 py-2"
-          >
-            <span className="text-sm">{p.name}</span>
-            <button
-              type="button"
-              onClick={() => removePlayer(p.id)}
-              className="text-xs text-gray-500 hover:text-red-600"
-            >
-              Remove
-            </button>
-          </li>
-        ))}
-        {players.length === 0 && (
-          <li className="text-sm text-gray-400 italic px-3 py-2">No players yet</li>
-        )}
-      </ul>
+    <>
+      <div className="rs-roster__head">
+        <div className="eyebrow">
+          <span className="eyebrow__text">[ ROSTER ]</span>
+        </div>
+        <div className="rs-roster__count">
+          <span className="num">{String(players.length).padStart(2, "0")}</span>
+          PLAYERS · UDISC
+        </div>
+      </div>
 
-      <form onSubmit={addPlayer} className="flex gap-2">
-        <input
-          type="text"
-          value={newName}
-          onChange={(e) => setNewName(e.target.value)}
-          placeholder="Add a walk-in player"
-          className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
-        />
-        <button
-          type="submit"
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50"
-        >
-          Add
-        </button>
+      {players.length > 0 ? (
+        <ul className="roster-list">
+          {players.map((p, i) => (
+            <li key={p.id} className="roster-row">
+              <span className="roster-row__num">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <span className="roster-row__name">{p.name}</span>
+              <button
+                type="button"
+                className="roster-row__remove"
+                onClick={() => removePlayer(p.id)}
+                aria-label={`Remove ${p.name}`}
+              >
+                REMOVE
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div className="roster-empty">No players yet — add a walk-in below.</div>
+      )}
+
+      <form onSubmit={addPlayer} className="walkin">
+        <div className="walkin__label">
+          <span className="walkin__plus">[+]</span> ADD WALK-IN
+        </div>
+        <div className="walkin__row">
+          <input
+            type="text"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            placeholder="Player name"
+            className="walkin__input"
+          />
+          <button type="submit" className="walkin__btn">
+            Add
+          </button>
+        </div>
       </form>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
-
-      <button
-        type="button"
-        onClick={onRandomize}
-        className="rounded-md bg-black px-4 py-3 text-white font-medium"
-      >
-        Randomize ({players.length})
-      </button>
-    </div>
+      <div className="rs-cta-wrap">
+        <button
+          type="button"
+          onClick={onRandomize}
+          className="cta"
+          disabled={players.length < 3}
+        >
+          <span className="cta__label">
+            <span className="cta__arrow">▸</span>
+            Randomize pairings
+          </span>
+          <span className="cta__count">
+            {String(players.length).padStart(2, "0")}
+          </span>
+        </button>
+        <div className="cta-sub">
+          Min 3 players. Cards of 4 + a cali on any short card (1 mulligan/hole).
+        </div>
+        {error && <p className="cta-error">{error}</p>}
+      </div>
+    </>
   );
 }

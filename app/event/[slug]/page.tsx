@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Eyebrow from "@/components/Eyebrow";
 import RosterEditor from "@/components/RosterEditor";
 import {
   EmptyRosterError,
@@ -38,29 +39,35 @@ export default async function EventPage({
 
   if (errorMessage || !data) {
     return (
-      <main className="flex-1 flex flex-col items-center justify-center px-6 py-12">
-        <div className="w-full max-w-md flex flex-col gap-4 text-center">
-          <h1 className="text-xl font-semibold">Couldn&apos;t load roster</h1>
-          <p className="text-sm text-red-600">{errorMessage}</p>
-          <Link href="/" className="text-sm underline">
-            Back to start
-          </Link>
-        </div>
+      <main className="screen state-center">
+        <Eyebrow rule hot>
+          [ ROSTER UNAVAILABLE ]
+        </Eyebrow>
+        <h1 className="state-title">Couldn&apos;t load roster</h1>
+        <p className="state-body">{errorMessage}</p>
+        <Link href="/" className="back-btn">
+          ← Today
+        </Link>
       </main>
     );
   }
 
   return (
-    <main className="flex-1 flex flex-col px-4 py-6 max-w-md mx-auto w-full">
-      <header className="mb-4">
-        <Link href="/" className="text-xs text-gray-500 underline">
-          ← Back
+    <main className="screen screen--roster">
+      <header className="rs-header">
+        <Link href="/" className="back-btn">
+          ← Today
         </Link>
-        <h1 className="text-2xl font-semibold mt-2">{data.eventName}</h1>
-        <p className="text-xs text-gray-500 mt-1">
-          {data.players.length} player{data.players.length === 1 ? "" : "s"} from UDisc
-        </p>
+        <div className="rs-title-wrap">
+          <Eyebrow rule={false}>[ TODAY · UDISC ]</Eyebrow>
+          <h1 className="rs-title">{data.eventName}</h1>
+          <div className="rs-course">
+            ▸ {data.players.length} player
+            {data.players.length === 1 ? "" : "s"} from UDisc
+          </div>
+        </div>
       </header>
+
       <RosterEditor slug={slug} initialPlayers={data.players} />
     </main>
   );
