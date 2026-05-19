@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, JetBrains_Mono } from "next/font/google";
+import RouteTransition from "@/components/RouteTransition";
+import SplashGate from "@/components/SplashGate";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -35,7 +37,10 @@ export default function RootLayout({
       className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <div className="app-root theme-pine">{children}</div>
+        <div className="app-root theme-pine">
+          <SplashGate>{children}</SplashGate>
+          <RouteTransition />
+        </div>
       </body>
     </html>
   );

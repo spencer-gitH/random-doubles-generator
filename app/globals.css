@@ -151,6 +151,64 @@ html, body {
   100% { transform: rotate(720deg) scale(1); }
 }
 
+/* ─── Splash + route-transition overlays ────────────────────────────── */
+
+.splash-overlay,
+.route-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+}
+.splash-overlay { z-index: 100; }
+.route-overlay { z-index: 90; gap: 16px; }
+
+.splash-overlay__wordmark {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1;
+}
+.splash-overlay__title {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: -.01em;
+  color: var(--text);
+  text-transform: uppercase;
+}
+.splash-overlay__sub {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--accent-text);
+  margin-top: 10px;
+}
+.splash-overlay--fading {
+  animation: splashFade 300ms ease forwards;
+}
+@keyframes splashFade {
+  to { opacity: 0; visibility: hidden; }
+}
+
+.route-overlay__label {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 12px;
+  letter-spacing: .14em;
+  color: var(--accent-text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash-overlay,
+  .route-overlay { display: none; }
+}
+
 /* ─── Home screen ────────────────────────────────────────────────────── */
 
 .home-header {
@@ -177,6 +235,23 @@ html, body {
   gap: 6px;
 }
 .home-header__meta-label { color: var(--text-mute); }
+.home-header__standings-link {
+  display: inline-block;
+  margin-top: 6px;
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--accent-text);
+  border: 1px solid var(--accent-text);
+  padding: 4px 8px;
+  text-decoration: none;
+  transition: background 120ms, color 120ms;
+}
+.home-header__standings-link:hover {
+  background: var(--accent-text);
+  color: var(--on-accent);
+}
 
 .home-hero { padding: 8px 0 20px; }
 .home-hero__pre {
@@ -904,4 +979,15 @@ html, body {
   color: var(--accent-text);
   line-height: 1.5;
   max-width: 320px;
+}
+
+/* ─── Standings screen ──────────────────────────────────────────────── */
+
+.screen--standings {
+  max-width: 900px;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+.screen--standings .rs-header {
+  margin-bottom: 8px;
 }

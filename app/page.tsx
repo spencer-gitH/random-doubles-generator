@@ -1,3 +1,4 @@
+import Link from "next/link";
 import EventCard from "@/components/EventCard";
 import PasteUrlFallback from "@/components/PasteUrlFallback";
 import Wordmark from "@/components/Wordmark";
@@ -47,6 +48,9 @@ export default async function HomePage() {
             <span className="home-header__meta-label">DATE/</span>
             <span>{dateLabel}</span>
           </div>
+          <Link href="/standings" className="home-header__standings-link">
+            STANDINGS →
+          </Link>
         </div>
       </header>
 

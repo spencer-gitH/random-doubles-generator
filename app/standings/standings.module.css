@@ -1,0 +1,150 @@
+.meta {
+  text-align: right;
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 10px;
+  line-height: 1.45;
+  color: var(--text);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.metaRow {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.metaLabel { color: var(--text-mute); }
+
+.scoreboard {
+  width: 100%;
+  margin-top: 18px;
+  border: 2px solid var(--border);
+  overflow-x: auto;
+  background: var(--bg);
+}
+
+.table {
+  border-collapse: collapse;
+  width: 100%;
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-feature-settings: 'tnum';
+  font-size: 13px;
+  color: var(--text);
+}
+
+.headCell {
+  text-transform: uppercase;
+  font-weight: 600;
+  font-size: 9px;
+  letter-spacing: .14em;
+  color: var(--accent-text);
+  background: var(--bg);
+  border-bottom: 2px solid var(--border);
+  padding: 10px 6px;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  white-space: nowrap;
+}
+
+.table tbody tr {
+  border-bottom: 1px solid rgba(245, 241, 226, .14);
+}
+.table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.cellPos,
+.cellPts,
+.cellPlayer,
+.cellMatch {
+  padding: 10px 8px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.cellPos {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--bg);
+  min-width: 42px;
+  width: 42px;
+  border-right: 1px solid rgba(245, 241, 226, .14);
+  color: var(--text-mute);
+  font-size: 11px;
+}
+.headCell.cellPos {
+  z-index: 3;
+}
+
+.cellPts {
+  position: sticky;
+  left: 42px;
+  z-index: 1;
+  background: var(--bg);
+  min-width: 54px;
+  width: 54px;
+  border-right: 1px solid rgba(245, 241, 226, .14);
+  font-weight: 700;
+  color: var(--text);
+}
+.headCell.cellPts {
+  z-index: 3;
+}
+
+.cellPlayer {
+  position: sticky;
+  left: 96px;
+  z-index: 1;
+  background: var(--bg);
+  min-width: 140px;
+  text-align: left;
+  border-right: 2px solid var(--border);
+  font-weight: 500;
+  letter-spacing: .04em;
+}
+.headCell.cellPlayer {
+  z-index: 3;
+}
+
+.cellPtsHot {
+  color: var(--accent-text) !important;
+  font-weight: 700;
+}
+
+.cellMatch {
+  min-width: 60px;
+  width: 60px;
+  color: var(--text);
+}
+
+.matchHeadTop {
+  font-size: 10px;
+  letter-spacing: .12em;
+  color: var(--accent-text);
+}
+.matchHeadBot {
+  font-size: 9px;
+  letter-spacing: .06em;
+  color: var(--text-mute);
+  margin-top: 2px;
+}
+
+.cellEmpty {
+  color: var(--text-mute);
+  font-weight: 400;
+}
+
+.cellBest {
+  background: rgba(244, 205, 42, .12);
+  color: var(--accent-text);
+  font-weight: 700;
+}
+
+@media (max-width: 480px) {
+  .table { font-size: 12px; }
+  .cellMatch { min-width: 52px; width: 52px; padding: 8px 4px; }
+  .cellPos { min-width: 36px; width: 36px; }
+  .cellPts { min-width: 48px; width: 48px; left: 36px; }
+  .cellPlayer { min-width: 110px; left: 84px; }
+}
