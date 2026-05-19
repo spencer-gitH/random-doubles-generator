@@ -71,6 +71,11 @@ async function fetchPage(url: string): Promise<string> {
   return res.text();
 }
 
+const MONTHS: Record<string, number> = {
+  JAN: 1, FEB: 2, MAR: 3, APR: 4, MAY: 5, JUN: 6,
+  JUL: 7, AUG: 8, SEP: 9, OCT: 10, NOV: 11, DEC: 12,
+};
+
 function parseSchedulePage(html: string): LeagueEventStub[] {
   const $ = cheerio.load(html);
   const events: LeagueEventStub[] = [];
@@ -85,11 +90,42 @@ function parseSchedulePage(html: string): LeagueEventStub[] {
     const slug = match[1];
 
     const datetime = $a.find("time").attr("datetime");
-    if (!datetime) return;
+    let eventDate: string | null = null;
 
-    const eventDate = datetime.slice(0, 10);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(eventDate)) return;
+    if (datetime) {
+      const iso = datetime.slice(0, 10);
+      if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) eventDate = iso;
+    }
 
+    if (!eventDate) {
+      const monthRaw = $a.find("div.uppercase").first().text().trim().toUpperCase();
+      const dayRaw = $a
+        .find("div")
+        .filter((_, d) => /^\d{1,2}$/.test($(d).text().trim()))
+        .first()
+        .text()
+        .trim();
+      const yearText = $a
+        .find("span")
+        .filter((_, s) => /^(20\d{2})$/.test($(s).text().trim()))
+        .first()
+        .text()
+        .trim();
+      const yearFallback = $a.text().match(/(?:^|\D)(20\d{2})(?:\D|$)/);
+      const year = yearText
+        ? parseInt(yearText, 10)
+        : yearFallback
+        ? parseInt(yearFallback[1], 10)
+        : null;
+      const month = MONTHS[monthRaw.slice(0, 3)];
+      const day = parseInt(dayRaw, 10);
+
+      if (year && month && day) {
+        eventDate = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      }
+    }
+
+    if (!eventDate) return;
     events.push({ slug, eventDate });
   });
 
