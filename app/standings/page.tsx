@@ -88,13 +88,12 @@ export default async function StandingsPage() {
                   </td>
                   {data.events.map((ev) => {
                     const pts = row.pointsByEvent[ev.id];
-                    const isBest = pts !== undefined && pts === row.bestPoints;
                     return (
                       <td
                         key={ev.id}
                         className={`${styles.cellMatch} ${
                           pts === undefined ? styles.cellEmpty : ""
-                        } ${isBest ? styles.cellBest : ""}`}
+                        }`}
                       >
                         {pts === undefined ? "·" : formatPoints(pts)}
                       </td>

@@ -135,12 +135,6 @@
   font-weight: 400;
 }
 
-.cellBest {
-  background: rgba(244, 205, 42, .12);
-  color: var(--accent-text);
-  font-weight: 700;
-}
-
 @media (max-width: 480px) {
   .table { font-size: 12px; }
   .cellMatch { min-width: 52px; width: 52px; padding: 8px 4px; }

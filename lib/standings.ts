@@ -15,7 +15,6 @@ export type StandingsRow = {
   totalPoints: number;
   eventsPlayed: number;
   pointsByEvent: Record<string, number>;
-  bestPoints: number;
 };
 
 export type StandingsData = {
@@ -59,7 +58,6 @@ export const getStandings = (seasonId: string) =>
         {
           displayName: string;
           total: number;
-          best: number;
           byEvent: Record<string, number>;
         }
       >();
@@ -70,12 +68,10 @@ export const getStandings = (seasonId: string) =>
         if (existing) {
           existing.total += pts;
           existing.byEvent[row.eventId] = pts;
-          if (pts > existing.best) existing.best = pts;
         } else {
           byPlayer.set(row.playerId, {
             displayName: row.displayName,
             total: pts,
-            best: pts,
             byEvent: { [row.eventId]: pts },
           });
         }
@@ -88,7 +84,6 @@ export const getStandings = (seasonId: string) =>
           totalPoints: round1(agg.total),
           eventsPlayed: Object.keys(agg.byEvent).length,
           pointsByEvent: agg.byEvent,
-          bestPoints: agg.best,
         }),
       );
 
