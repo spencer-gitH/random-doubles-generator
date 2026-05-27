@@ -80,6 +80,10 @@ export async function fetchParticipants(input: string): Promise<ScrapeResult> {
   }
 
   if (names.length === 0) {
+    names = extractFromStreamingData($);
+  }
+
+  if (names.length === 0) {
     throw new EmptyRosterError();
   }
 
@@ -111,4 +115,57 @@ function slugifyId(name: string): string {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "") + "-" + Math.random().toString(36).slice(2, 6)
   );
+}
+
+const NAME_RE = /^[A-Z][a-z]+([ '-][A-Z]?[a-z]+)+\.?$/;
+const SKIP_RE = /^https?:|^event_|^league-|_t_player_|\.jpg$|\.png$|@|^\d{4}-\d{2}/;
+
+function extractFromStreamingData($: cheerio.CheerioAPI): string[] {
+  let jsonStr = "";
+  $("script").each((_, el) => {
+    const text = $(el).text();
+    const match = text.match(
+      /streamController\.enqueue\("(.+?)"\);/,
+    );
+    if (match) jsonStr = match[1];
+  });
+  if (!jsonStr) return [];
+
+  let arr: unknown[];
+  try {
+    const unescaped = jsonStr
+      .replace(/\\"/g, '"')
+      .replace(/\\\\/g, "\\")
+      .replace(/\\n/g, "\n");
+    arr = JSON.parse(unescaped) as unknown[];
+  } catch {
+    return [];
+  }
+
+  const regIdx = arr.indexOf("confirmedUserRegistrants");
+  if (regIdx === -1) return [];
+  const indices = arr[regIdx + 1];
+  if (!Array.isArray(indices)) return [];
+
+  const names: string[] = [];
+  for (const idx of indices) {
+    if (typeof idx !== "number" || idx >= arr.length) continue;
+    const obj = arr[idx];
+    if (typeof obj !== "object" || obj === null) continue;
+
+    for (const val of Object.values(obj)) {
+      if (typeof val !== "number" || val >= arr.length) continue;
+      const resolved = arr[val];
+      if (typeof resolved !== "string") continue;
+      const trimmed = resolved.trim();
+      if (trimmed.length < 2 || trimmed.length > 60) continue;
+      if (SKIP_RE.test(trimmed)) continue;
+      if (NAME_RE.test(trimmed)) {
+        names.push(trimmed);
+        break;
+      }
+    }
+  }
+
+  return names;
 }
