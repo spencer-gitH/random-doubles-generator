@@ -27,6 +27,11 @@ export class ScrapeError extends Error {
 const USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
+const PLAYER_NAME_SELECTORS = [
+  "p.mb-1.leading-none",
+  "div.font-bold.text-sm.text-text.leading-tight",
+];
+
 const playerSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
@@ -65,10 +70,14 @@ export async function fetchParticipants(input: string): Promise<ScrapeResult> {
   const titleText = $("title").first().text();
   const eventName = extractEventName(titleText) ?? slug;
 
-  const names = $("p.mb-1.leading-none")
-    .map((_, el) => $(el).text().trim())
-    .get()
-    .filter((n) => n.length > 0);
+  let names: string[] = [];
+  for (const selector of PLAYER_NAME_SELECTORS) {
+    names = $(selector)
+      .map((_, el) => $(el).text().trim())
+      .get()
+      .filter((n) => n.length > 0);
+    if (names.length > 0) break;
+  }
 
   if (names.length === 0) {
     throw new EmptyRosterError();
