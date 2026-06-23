@@ -668,6 +668,15 @@ html, body {
   text-transform: uppercase;
   cursor: pointer;
 }
+.walkin__notice {
+  margin-top: 8px;
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 10px;
+  line-height: 1.4;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--hot);
+}
 
 .rs-cta-wrap {
   margin-top: auto;

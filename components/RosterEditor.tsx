@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Player } from "@/lib/types";
+import { isPossibleNicknameOf, nameKey } from "@/lib/nameKey";
 
 const STORAGE_KEY_PREFIX = "rdg-roster:";
 
@@ -17,20 +18,41 @@ export default function RosterEditor({
   const [players, setPlayers] = useState<Player[]>(initialPlayers);
   const [newName, setNewName] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   function removePlayer(id: string) {
+    setNotice(null);
     setPlayers((cur) => cur.filter((p) => p.id !== id));
   }
 
   function addPlayer(e: React.FormEvent) {
     e.preventDefault();
-    const name = newName.trim();
+    setNotice(null);
+    const name = newName.trim().replace(/\s+/g, " ");
     if (!name) return;
+
+    // Block exact duplicates regardless of case / spacing / punctuation, so a
+    // walk-in can't double up a player already pulled from UDisc.
+    const key = nameKey(name);
+    const duplicate = players.find((p) => nameKey(p.name) === key);
+    if (duplicate) {
+      setNotice(`"${duplicate.name}" is already on the roster.`);
+      return;
+    }
+
+    // Add, but flag a likely nickname/partial match (e.g. "Bo" vs "Bohrod")
+    // instead of silently merging — two different people can share a prefix.
+    const possibleMatch = players.find((p) => isPossibleNicknameOf(name, p.name));
     setPlayers((cur) => [
       ...cur,
       { id: `manual-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, name },
     ]);
     setNewName("");
+    if (possibleMatch) {
+      setNotice(
+        `Added "${name}". Heads up — "${possibleMatch.name}" is already on the roster; remove one if they're the same player.`,
+      );
+    }
   }
 
   function onRandomize() {
@@ -99,6 +121,7 @@ export default function RosterEditor({
             Add
           </button>
         </div>
+        {notice && <p className="walkin__notice">{notice}</p>}
       </form>
 
       <div className="rs-cta-wrap">

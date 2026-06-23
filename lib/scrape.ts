@@ -1,6 +1,7 @@
 import * as cheerio from "cheerio";
 import { z } from "zod";
 import type { Player, ScrapeResult } from "./types";
+import { nameKey } from "./nameKey";
 import { parseUdiscInput } from "./url";
 
 export class EventNotFoundError extends Error {
@@ -65,6 +66,19 @@ export async function fetchParticipants(input: string): Promise<ScrapeResult> {
   }
 
   const html = await res.text();
+  return parseParticipants(html, slug);
+}
+
+/**
+ * Pure parse of a UDisc participants page. Separated from the network fetch so
+ * it can be exercised directly against saved HTML in tests.
+ *
+ * Two extraction paths, tried in order:
+ *  1. Server-rendered name nodes (CSS selectors) — no name filtering needed.
+ *  2. Client-rendered React Flight stream — names live in a serialized data
+ *     blob; {@link extractFromStreamingData} reconstructs them.
+ */
+export function parseParticipants(html: string, slug: string): ScrapeResult {
   const $ = cheerio.load(html);
 
   const titleText = $("title").first().text();
@@ -89,9 +103,11 @@ export async function fetchParticipants(input: string): Promise<ScrapeResult> {
 
   const seen = new Set<string>();
   const players: Player[] = [];
-  for (const name of names) {
-    const key = name.toLowerCase();
-    if (seen.has(key)) continue;
+  for (const rawName of names) {
+    const name = rawName.trim().replace(/\s+/g, " ");
+    if (!name) continue;
+    const key = nameKey(name);
+    if (!key || seen.has(key)) continue;
     seen.add(key);
     players.push({ id: slugifyId(name), name });
   }
@@ -117,16 +133,25 @@ function slugifyId(name: string): string {
   );
 }
 
-const NAME_RE = /^[A-Z][a-z]+([ '-][A-Z]?[a-z]+)+\.?$/;
+// A full personal name: two or more capitalized, mostly-alphabetic tokens
+// (e.g. "Phil Pingeton", "Mary Anne Smith"). Used to *locate* which registrant
+// field holds the display name — NOT to validate individual names, so that
+// single-token display names (e.g. "Bohrod") are not rejected.
+const FULL_NAME_RE = /^\p{Lu}[\p{L}'’.-]*(?:\s+\p{L}[\p{L}'’.-]*)+$/u;
+
+// A usable display-name value once the name field has been identified. Starts
+// with an uppercase letter and contains only letters, marks, spaces and name
+// punctuation. Accepts single-token names like "Bohrod" that FULL_NAME_RE
+// deliberately does not.
+const NAME_VALUE_RE = /^\p{Lu}[\p{L}\p{M}'’. -]*$/u;
+
 const SKIP_RE = /^https?:|^event_|^league-|_t_player_|\.jpg$|\.png$|@|^\d{4}-\d{2}/;
 
 function extractFromStreamingData($: cheerio.CheerioAPI): string[] {
   let jsonStr = "";
   $("script").each((_, el) => {
     const text = $(el).text();
-    const match = text.match(
-      /streamController\.enqueue\("(.+?)"\);/,
-    );
+    const match = text.match(/streamController\.enqueue\("(.+?)"\);/);
     if (match) jsonStr = match[1];
   });
   if (!jsonStr) return [];
@@ -147,24 +172,67 @@ function extractFromStreamingData($: cheerio.CheerioAPI): string[] {
   const indices = arr[regIdx + 1];
   if (!Array.isArray(indices)) return [];
 
-  const names: string[] = [];
+  // Collect each registrant's candidate string fields, keyed by the object's
+  // own (minified) field key. The blob deduplicates strings, so each object
+  // value is an index back into `arr`. UDisc uses the same minified key for the
+  // same field across every registrant on a page, which lets us detect *which*
+  // field holds the display name rather than guessing per-field.
+  const registrants: Array<Map<string, string>> = [];
   for (const idx of indices) {
-    if (typeof idx !== "number" || idx >= arr.length) continue;
+    if (typeof idx !== "number" || idx < 0 || idx >= arr.length) continue;
     const obj = arr[idx];
     if (typeof obj !== "object" || obj === null) continue;
 
-    for (const val of Object.values(obj)) {
-      if (typeof val !== "number" || val >= arr.length) continue;
-      const resolved = arr[val];
-      if (typeof resolved !== "string") continue;
-      const trimmed = resolved.trim();
+    const fields = new Map<string, string>();
+    for (const [key, ref] of Object.entries(obj)) {
+      if (typeof ref !== "number" || ref < 0 || ref >= arr.length) continue;
+      const value = arr[ref];
+      if (typeof value !== "string") continue;
+      const trimmed = value.trim();
       if (trimmed.length < 2 || trimmed.length > 60) continue;
       if (SKIP_RE.test(trimmed)) continue;
-      if (NAME_RE.test(trimmed)) {
-        names.push(trimmed);
-        break;
+      fields.set(key, trimmed);
+    }
+    if (fields.size > 0) registrants.push(fields);
+  }
+  if (registrants.length === 0) return [];
+
+  // Identify the field that most often holds a full personal name. Random
+  // tokens, usernames and shared enum labels never match FULL_NAME_RE, so the
+  // real name field wins decisively even when a few players (like single-name
+  // "Bohrod") only have a one-word display name.
+  const votes = new Map<string, number>();
+  for (const fields of registrants) {
+    for (const [key, value] of fields) {
+      if (FULL_NAME_RE.test(value)) {
+        votes.set(key, (votes.get(key) ?? 0) + 1);
       }
     }
+  }
+  let nameKeyField: string | null = null;
+  let bestVotes = 0;
+  for (const [key, count] of votes) {
+    if (count > bestVotes) {
+      bestVotes = count;
+      nameKeyField = key;
+    }
+  }
+
+  const names: string[] = [];
+  for (const fields of registrants) {
+    // Prefer the detected name field — this is what rescues single-token
+    // display names such as "Bohrod" that the old two-token filter dropped.
+    let name =
+      nameKeyField !== null ? fields.get(nameKeyField) : undefined;
+    if (!name || !NAME_VALUE_RE.test(name)) {
+      // Fallback for an odd registrant missing the detected field: take a full
+      // name from any field, else any plausible name-shaped value.
+      const values = [...fields.values()];
+      name =
+        values.find((v) => FULL_NAME_RE.test(v)) ??
+        values.find((v) => NAME_VALUE_RE.test(v));
+    }
+    if (name) names.push(name);
   }
 
   return names;
